@@ -5,9 +5,16 @@ let running = false;
 
 let AnimationId;
 
-var laVenenosa;
-var t1;
-var messageBox;
+let laVenenosa;
+let t1;
+let messageBox;
+let timeBox;
+let scoreBox;
+let vitamina;
+
+var today = new Date();
+var clock = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+ 
 
 // Used to monitor whether paddles and ball are
 // moving and in what direction
@@ -41,10 +48,20 @@ function SetupCanvas(){
     gameOver = false;
     //console.log("Yo termine SetupCanvas");
     laVenenosa = new Snake(innerWidth/2, innerHeight/2, 0, 'green');
-
     laVenenosa.grow(15);
     laVenenosa.draw();
     
+    timeBox = new MessageBox(innerWidth-120, 10, 80, 40, 'black', 'red','12px Courier', clock);
+    timeBox.draw();
+
+    messageBox    = new MessageBox(innerWidth/4, innerHeight/4, 300, 150, 'grey', 'white', '30px Courier', 'Game Over!!!');
+    
+    vitamina = new Vitamina(200, 100, 'aqua')
+    vitamina.draw();
+
+    scoreBox = new MessageBox(innerWidth*0.45, 10, 80, 55, 'blue', 'white', '25px Courier', '350');
+    scoreBox.draw();
+   
 }
 class Snake{
 
@@ -60,9 +77,12 @@ class Snake{
         this.body = [];
     }
     draw(){
+
+        ctx.save();
         // snake's head
         ctx.rect (this.x, this.y, 20, 20);
         ctx.stroke();
+
 
         console.log("length " + this.body.length)
 
@@ -72,6 +92,8 @@ class Snake{
             element.draw();
         }
         console.log(this.body)
+
+        ctx.restore();
     }
     update(posX, posY){
         this.x += posX;
@@ -106,7 +128,7 @@ class Tile {
         this.previousY = 0;
     }
     draw(){
-       
+        ctx.save();
         //creating rectangle
         ctx.beginPath();
         ctx.rect(this.x, this.y, 20, 20);
@@ -117,29 +139,61 @@ class Tile {
         ctx.font = "15px Arial";
         ctx.fillStyle = "blue";
         ctx.fillText(this.decoration, this.x+6, this.y+15);
-
+        ctx.restore();
     }
 
 }
 class MessageBox{
-    constructor(x, y, color, message){
+    constructor(x, y, wWidth, wHeight, bgColor, foreColor, font, message){
         this.x = x;
         this.y = y;            //buscar como hacer cajita de textos con efecto
-        this.color = color;
+
+        this.wWidth = wWidth;
+        this.wHeight = wHeight;
+
+        this.bgColor = bgColor;
+        this.foreColor = foreColor;
+        this.font = font;
+
         this.message = message;
 
     }
     draw(){
+        ctx.save();
         ctx.beginPath();
-        ctx.rect(this.x, this.y, 300, 300);
-        ctx.fillStyle = this.color;
+        ctx.rect(this.x, this.y, this.wWidth, this.wHeight);
+        ctx.fillStyle = this.bgColor;
         ctx.fill();
         ctx.stroke();
 
-        ctx.font = "15px Arial";
-        ctx.fillStyle = this.color;
-        ctx.fillText(this.message, this.x+6, this.y+15);
+        ctx.font = this.font;
+        ctx.fillStyle = this.foreColor;
+        ctx.fillText(this.message, this.x + (this.wWidth*0.20), this.y + (this.wHeight*0.58)); //hacer una equacion para que el text box sea en coordinacion con el tamano del canvas
+        ctx.restore();
     }
+}
+class Vitamina{
+
+    constructor(x, y, color){
+        this.x = x;
+        this.y = y;
+        this.color = color;
+    }
+    draw(){
+        //creating circles
+        ctx.save();
+        ctx.beginPath();
+        // ctx.fillStyle = 'White';
+        // var speed = 0;
+        // speed += 0;
+
+        ctx.arc(this.x, this.y, 10, 0, 2 * Math.PI);
+        ctx.stroke();
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.restore();
+    }    
+        
 }
 function gameLoop(){
    // console.log("veces que pase por aqui");
@@ -149,21 +203,14 @@ function gameLoop(){
         AnimationId = requestAnimationFrame(gameLoop);
         update();
         paint();
+        
 
     } else {
 
         //Finish the game
         cancelAnimationFrame(AnimationId)
 
-        // ctx.font = '30px Arial';
-        // ctx.textAlign = 'center';
-        // ctx.fillStyle = "red";
-        // ctx.fillText = ("Game Over!!!",canvas.width/2, canvas.height/2);
-
-        messageBox = new MessageBox(innerWidth/2, innerHeight/2,'black','Game Over!!')
         messageBox.draw();
-
-
     }
 }
 function paint(){
@@ -171,7 +218,11 @@ function paint(){
         {
             //Clear the canvas 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+
             laVenenosa.draw();
+            messageBox.draw();
+            timeBox.draw();
+            vitamina.draw();
 
             // //Draw Canvas background
             // ctx.fillStyle = 'rgb(0, 0, 0, 0.3)';
@@ -267,8 +318,8 @@ function MovePlayerPaddle(key){
     
     update();
 }
- // Creating of Colors  ramdon
  function generateRandomColor(){
+     // Creating of Colors  ramdon
     var randomColor = '#'+Math.floor(Math.random()*16777215).toString(16);
     return randomColor;
     //random color will be freshly served

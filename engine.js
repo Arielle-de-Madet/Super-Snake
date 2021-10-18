@@ -11,6 +11,8 @@ let messageBox;
 let timeBox;
 let scoreBox;
 let vitamina;
+let dashboard;
+let gameTitle;
 
 var today = new Date();
 var clock = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
@@ -51,7 +53,10 @@ function SetupCanvas(){
     laVenenosa.grow(15);
     laVenenosa.draw();
     
-    timeBox = new MessageBox(innerWidth-120, 10, 80, 40, 'black', 'red','12px Courier', clock);
+    dashboard = new MessageBox(0, 0, innerWidth, 70, 'white', '', '', '');
+    dashboard.draw();
+
+    timeBox = new MessageBox(innerWidth-110, 15, 80, 40, 'orange', 'white','14px Courier', clock);
     timeBox.draw();
 
     messageBox    = new MessageBox(innerWidth/4, innerHeight/4, 300, 150, 'grey', 'white', '30px Courier', 'Game Over!!!');
@@ -59,8 +64,11 @@ function SetupCanvas(){
     vitamina = new Vitamina(200, 100, 'aqua')
     vitamina.draw();
 
-    scoreBox = new MessageBox(innerWidth*0.45, 10, 80, 55, 'blue', 'white', '25px Courier', '350');
+    scoreBox = new MessageBox(20, 15, 120, 45, 'orange', 'white', '22px Courier', 'Score: ');
     scoreBox.draw();
+
+    gameTitle = new MessageBox(innerWidth*0.45, 15, 70, 40, 'blue', 'white', '18px Courier', 'Snake');
+    gameTitle.draw();
    
 }
 class Snake{
@@ -144,7 +152,7 @@ class Tile {
 
 }
 class MessageBox{
-    constructor(x, y, wWidth, wHeight, bgColor, foreColor, font, message, clock){
+    constructor(x, y, wWidth, wHeight, bgColor, foreColor, font, message){
         this.x = x;
         this.y = y;            //buscar como hacer cajita de textos con efecto
 
@@ -156,7 +164,6 @@ class MessageBox{
         this.font = font;
 
         this.message = message;
-        this.clock = clock;
 
     }
     draw(){
@@ -169,7 +176,7 @@ class MessageBox{
 
         ctx.font = this.font;
         ctx.fillStyle = this.foreColor;
-        ctx.fillText(this.message, this.x + (this.wWidth*0.20), this.y + (this.wHeight*0.58)); //hacer una equacion para que el text box sea en coordinacion con el tamano del canvas
+        ctx.fillText(this.message, this.x + (this.wWidth*0.19), this.y + (this.wHeight*0.65)); //hacer una equacion para que el text box sea en coordinacion con el tamano del canvas
         ctx.restore();
     }
 }
@@ -271,6 +278,7 @@ function paint(){
 function update(){
     cirX += cirSpeed;
     cirY += cirSpeed;
+   // timeBox.draw();
 
     //enemies off the screen?
     if(cirX > canvas.height ) {

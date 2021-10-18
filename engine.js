@@ -144,7 +144,7 @@ class Tile {
 
 }
 class MessageBox{
-    constructor(x, y, wWidth, wHeight, bgColor, foreColor, font, message){
+    constructor(x, y, wWidth, wHeight, bgColor, foreColor, font, message, clock){
         this.x = x;
         this.y = y;            //buscar como hacer cajita de textos con efecto
 
@@ -156,6 +156,7 @@ class MessageBox{
         this.font = font;
 
         this.message = message;
+        this.clock = clock;
 
     }
     draw(){
@@ -197,7 +198,6 @@ class Vitamina{
 }
 function gameLoop(){
    // console.log("veces que pase por aqui");
-
     if(gameOver==false) {
 
         AnimationId = requestAnimationFrame(gameLoop);

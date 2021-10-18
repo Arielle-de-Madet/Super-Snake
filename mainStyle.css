@@ -1,11 +1,11 @@
 body {
     text-align: center;
-    background: rgb(255, 255, 255);
+    background: rgb(56, 56, 56);
     margin: 0;
 }
 /* # is used to target ids in HTML */
 canvas {
-    background: rgb(186, 126, 245);
+    background: rgb(78, 138, 86);
     /* margin-left: 30px;
        margin-top: 30px; */
 }

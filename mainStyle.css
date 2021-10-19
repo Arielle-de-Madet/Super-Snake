@@ -1,7 +1,9 @@
 body {
     text-align: center;
-    /* background: rgb(56, 56, 56); */
-    /* margin: 0; */
+    background: rgb(211, 189, 142);
+
+    margin: 0;
+    overflow: hidden; 
 }
 /* # is used to target ids in HTML */
 canvas {

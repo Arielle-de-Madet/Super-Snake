@@ -1,7 +1,7 @@
 // Call for our function to execute when page is loaded
 document.addEventListener('DOMContentLoaded', SetupCanvas); //cuanda hay una interracion con la paginaWeb (juego),activa o llama la funcion setupCanvas
 
-let steppedGame = false; //para que el snake camina solo. Cuando steppedGame = true se hace manual
+let steppedGame = true; //para que el snake camina solo. Cuando steppedGame = true se hace manual
 
 let gameOver = false;
 let running = false;
@@ -21,7 +21,6 @@ let oVitamin;
 let oDashboard;
 let oGameTitle;
 
-let particles = [];
 
 let today = new Date();
 let clock = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
@@ -36,7 +35,7 @@ let DIRECTION = {
     LEFT: 3,
     RIGHT: 4
 };
-let cirSpeed = 0.0001;
+let cirSpeed = 0.001;
 let cirX = 5;
 let cirY = 1;
 
@@ -55,7 +54,7 @@ function SetupCanvas(){
     document.addEventListener('keydown', MovePlayerPaddle);
  
     
-    oSnake = new Snake(canvas.width/2, canvas.height/2, 0, 'green');
+    oSnake = new Snake(100, 400, 0, 'green');
     oSnake.grow(1);
 
     oVitamin = new Vitamina(0, 0);
@@ -64,8 +63,8 @@ function SetupCanvas(){
     
     oDashboard = new MessageBox(0, 0, canvas.width, 60, 'white', '', '', '');
     oTimeBox   = new MessageBox(canvas.width-110, 10, 90, 40, 'orange', 'white','14px Courier', clock);
-    oScoreBox  = new MessageBox(20, 10, 110, 40, 'orange', 'white', '20px Courier', 'Score: ' + score);
-    oGameTitle = new MessageBox(canvas.width*0.45, 10, 70, 40, 'blue', 'white', '18px Courier', 'Snake');
+    oScoreBox  = new MessageBox(20, 10, 130, 40, 'orange', 'white', '20px Courier', 'Score:' + score);
+    oGameTitle = new MessageBox(canvas.width*0.45, 10, 100, 40, 'white', 'orange', '22px Courier', 'Snake');
 
     draw();
    console.log('canvas.width: ' + canvas.width + ' canvas.height: ' + canvas.height);
@@ -221,6 +220,36 @@ class Snake {
         }
 
     }
+    crashWithBody(tile){
+    
+        let crash = false;
+
+        if ((this.x == tile.x) && (this.y == tile.y)) crash = true;
+        return crash;
+
+    }
+    crashWithOthers(otherObj){
+
+        console.log('s-x: '  + this.x , 's-y: ' + this.y)
+
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+        var otherleft = otherObj.x;
+        var otherright = otherObj.x + (otherObj.width);
+        var othertop = otherObj.y;
+        var otherbottom = otherObj.y + (otherObj.height);
+        var crash = true;
+
+        if ((mybottom < othertop) ||
+        (mytop > otherbottom) ||
+        (myright < otherleft) ||
+        (myleft > otherright)) {
+            crash = false;
+        }
+        return crash;
+    }
 }
 class Tile {
 
@@ -310,6 +339,8 @@ class MessageBox{
 }
 class Vitamina{
 
+   particles = [];
+
     constructor(x, y, color){
         this.x = x;
         this.y = y;
@@ -321,12 +352,12 @@ class Vitamina{
     draw(){
 
         // Draw particles
-        particles.forEach((particle, particleIndex) => {
+        this.particles.forEach((particle, particleIndex) => {
 
             if (particle.alpha <= 0) {
                 // after alpha hit < 0 the particle reappears on the screen. 
                 // let's make sure that does not happen
-                particles.splice(particleIndex, 1)
+                this.particles.splice(particleIndex, 1)
             } else {
                 // console.log("show particles on screeen")
                 // console.log(particle);
@@ -339,13 +370,24 @@ class Vitamina{
         // creating rectangle
         ctx.save();
         ctx.beginPath();
-        ctx.fillStyle = "blue";
+        ctx.fillStyle = "transparent"; //make it transparent
         ctx.fillRect(this.x, this.y, this.width, this.height);
         ctx.fill();
         ctx.restore();
  
-        drawApple(this.x, this.y);
+        //drawApple(this.x, this.y);
+        this.#drawImage(this.x, this.y)
 
+    }
+    splashIt(){
+
+        // console.log("Boom - Enemy Splased!!!")
+    
+        for (let index = 0; index < 8   ; index++) {
+            // particles.push(new Particle(target.x, target.y, 3, {x: Math.random()-0.5, y: Math.random()-0.5}, color))    
+            this.particles.push(new Particle(this.x, this.y, 3,   {x: (Math.random())*10-5, y: (Math.random())*10-5}, 'red'))    
+        }
+        // console.log(particles)
     }
     update(){
 
@@ -355,12 +397,25 @@ class Vitamina{
         this.x = Math.floor(Math.random() * canvas.width-40);
         this.y = Math.floor(Math.random() * canvas.height-40);
 
-    //ensure to discount the dashboard space 
-        if(this.y < 60 ) this.y = 80;
+        //ensure to discount the dashboard space 
+        if(this.y < 60  ||  this.y > canvas.height) this.y = 80;
+        if(this.x < 20  ||  this.x > canvas.width) this.x = 80;
+            
+    }
+    #drawImage(x, y){
+
+        // Image implementation (both work with not error by the image does not show)
+        const appleImg  = new Image();
+        appleImg.src = './assets/jabolko(red)-48.png';
+    
+        var img = document.getElementById("source");
+    
+        // console.log(x + ", " + y) 
+        //ctx.drawImage(appleImg, x, y);
+        ctx.drawImage(appleImg, 1, 1, 104, 124, x-14, y-7, 85, 85);
             
     }
 
-   
 }
 class Particle {
 
@@ -484,29 +539,46 @@ function update(){
     oScoreBox.update()
     oTimeBox.update(getTime());
 
-    // console.log(oSnake.x + ' = ' + (canvas.width-20));
+     //console.log(canvas.width + canvas.height);
     // console.log(oSnake.y + ' = ' + (canvas.height-20));
     
-    // if player tries to move off the board prevent that (LE: No need for this game)
-    if(oSnake.y < dashboardHeight || oSnake.y > canvas.height-20){
+    // if player tries to move off the board Game
+    if(oSnake.y == dashboardHeight+20 || oSnake.y == canvas.height){
+        // oSnake.y = oSnake.previousY;
+        // oSnake.update();
+        // oSnake.draw();
+
         gameOver = true;
 
-    } else if(oSnake.x < 0 || oSnake.x > (canvas.width-20)){
+    } else if(oSnake.x < 0 || oSnake.x > canvas.width-20){
+        //oSnake.x = canvas.width-20;
+
         gameOver = true;
     }
     
     // console.log("f1: " + recCollisionDectetion(oSnake, oVitamin));
-    if(recCollisionDectetion(oSnake, oVitamin)) {
+    if(oSnake.crashWithOthers (oVitamin)) {
         // console.log("Collision detected");
         // if (!gamePaused) gameOver = true;
         // setGameOver();
 
         // circle explosion
-        splashIt(oVitamin, 'red');
+        oVitamin.splashIt();
         oVitamin.move();
         addScore();
-        oScoreBox = new MessageBox(20, 10, 110, 40, 'orange', 'white', '20px Courier', 'Score: ' + score);
+        oScoreBox = new MessageBox(20, 10, 130, 40, 'orange', 'white', '20px Courier', 'Score:' + score);
         setTimeout(function(){ oSnake.grow(1);}, 1000);
+    }
+
+    // si la cabeza de la snake toca una de las partes de su cuerpo(empezando despues de 2), game over.
+
+    for ( let index = 2; index < oSnake.cuerpo.length; index++) {
+
+        var tile = oSnake.cuerpo[index];
+
+        if (oSnake.crashWithBody(tile)) {
+            gameOver = true;
+        }
     }
 }
 function MovePlayerPaddle(key){
@@ -578,26 +650,12 @@ function getTime(){
     
                 return clock;
 }
-
 var fps = 8; 
 // Article reference: http://www.javascriptkit.com/javatutors/requestanimationframe.shtml
 function laggedRequestAnimationFrame(timestamp){
     setTimeout(function(){ //throttle requestAnimationFrame to 20fps
         AnimationId = requestAnimationFrame(gameLoop);
     }, 1000/fps)
-}
-function drawApple(x, y){
-
-    // Image implementation (both work with not error by the image does not show)
-    const appleImg  = new Image();
-    appleImg.src = './assets/jabolko(red)-48.png';
-
-    var img = document.getElementById("source");
-
-    // console.log(x + ", " + y) 
-    //ctx.drawImage(appleImg, x, y);
-    ctx.drawImage(appleImg, 1, 1, 104, 124, x-14, y-7, 80, 80);
-        
 }
 function recCollisionDectetion(targetA, targetB) {
     return !(targetB.x > (targetA.x + targetA.width) || 
@@ -649,16 +707,6 @@ function setGameOver(){
     oMessageBox = new MessageBox((canvas.width/2)-100, (canvas.height/2)-40, 200, 80, 'grey', 'white', "20px Courier", "Game Over!!!");
     oMessageBox.draw("GameOver");
     
-}
-function splashIt(target, color){
-
-    // console.log("Boom - Enemy Splased!!!")
-
-    for (let index = 0; index < 8   ; index++) {
-        // particles.push(new Particle(target.x, target.y, 3, {x: Math.random()-0.5, y: Math.random()-0.5}, color))    
-        particles.push(new Particle(target.x, target.y, 3,   {x: Math.floor(Math.random())*10-5, y: Math.floor(Math.random())*10-5}, color))    
-    }
-    // console.log(particles)
 }
 function addScore(){
     score += 5;

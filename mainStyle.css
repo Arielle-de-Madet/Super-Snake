@@ -1,6 +1,6 @@
 body {
     text-align: center;
-    background: rgb(211, 189, 142);
+    background: url('./assets/sky2.jpg');
 
     margin: 0;
     overflow: hidden; 

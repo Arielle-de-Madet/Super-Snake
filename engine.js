@@ -8,7 +8,7 @@ let running = false;
 let gamePaused = false;
 
 let score = 0;
-let dashboardHeight = 40;
+let dashboardHeight = 60;
 
 let AnimationId;
 
@@ -20,11 +20,14 @@ let oScoreBox;
 let oVitamin;
 let oDashboard;
 let oGameTitle;
+let stopWatch;
 
-let particles = [];
+let oEat;
+let oCrash;
+let oGameOver;
 
-let today = new Date();
-let clock = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+// let today = new Date();
+// let clock = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
  
 
 // Used to monitor whether paddles and ball are
@@ -36,7 +39,7 @@ let DIRECTION = {
     LEFT: 3,
     RIGHT: 4
 };
-let cirSpeed = 0.0001;
+let cirSpeed = 0.001;
 let cirX = 5;
 let cirY = 1;
 
@@ -49,26 +52,37 @@ function SetupCanvas(){
     // working with Canvas
     ctx = canvas.getContext('2d');
 
-    canvas.width = 820; //Math.floor(innerWidth * 0.50);
-    canvas.height = 680; //Math.floor(innerHeight * 0.70);
+    canvas.width = 880; //Math.floor(innerWidth * 0.50);
+    canvas.height = 580; //Math.floor(innerHeight * 0.70);
 
     document.addEventListener('keydown', MovePlayerPaddle);
  
     
-    oSnake = new Snake(canvas.width/2, canvas.height/2, 0, 'green');
+    oSnake = new Snake(100, 400, 0, 'green');
     oSnake.grow(1);
 
     oVitamin = new Vitamina(0, 0);
     oVitamin.move();
 
+    stopWatch = new Stopwatch("stopWatchDisplay");
+    stopWatch.reset();
+
     
-    oDashboard = new MessageBox(0, 0, canvas.width, 60, 'white', '', '', '');
-    oTimeBox   = new MessageBox(canvas.width-110, 10, 90, 40, 'orange', 'white','14px Courier', clock);
-    oScoreBox  = new MessageBox(20, 10, 110, 40, 'orange', 'white', '20px Courier', 'Score: ' + score);
-    oGameTitle = new MessageBox(canvas.width*0.45, 10, 70, 40, 'blue', 'white', '18px Courier', 'Snake');
+    oDashboard = new MessageBox(0, 0, canvas.width, dashboardHeight, 'white', '', '', '');
+    oTimeBox   = new MessageBox(canvas.width-130, 10, 120, 40, 'orange', 'white','14px Courier', stopWatch.update());
+    oScoreBox  = new MessageBox(20, 10, 130, 40, 'orange', 'white', '20px Courier', 'Score:' + score);
+    oGameTitle = new MessageBox(canvas.width*0.45, 10, 120, 40, 'white', 'green', 'bold 26px Courier', 'Snake');
+
 
     draw();
+
+    oEat = new SoundPlayer('beepSound1', "assets/beep.wav");
+    oCrash= new SoundPlayer('beepSound2', "assets/stop.flac");
+    oGameOver= new SoundPlayer('beepSound2', "assets/010609168_prev.mp3");
+    
+
    console.log('canvas.width: ' + canvas.width + ' canvas.height: ' + canvas.height);
+   console.log('DashBoard: ' + dashboardHeight );
 }
 class Snake {
 
@@ -215,11 +229,41 @@ class Snake {
         for (let index = 0; index < numberOfTiles; index++) {
             // console.log("tile: " + index); 
             this.length +=1;
-            this.cuerpo.push(new Tile(tilePosX, tilePosY, this.velocity, 'yellow', this.length, tilePosX-20, tilePosY))
+            this.cuerpo.push(new Tile(tilePosX, tilePosY, this.velocity, 'yellow', '@', tilePosX-20, tilePosY))
             tilePosX -= 20; // TODO: Check if whether of not the head should always grow to the right???
             //tilePosY -= tilePosY;    // Y does not change for the initial setup       
         }
 
+    }
+    crashWithBody(tile){
+    
+        let crash = false;
+
+        if ((this.x == tile.x) && (this.y == tile.y)) crash = true;
+        return crash;
+
+    }
+    crashWithOthers(otherObj){
+
+        console.log('s-x: '  + this.x , 's-y: ' + this.y)
+
+        var myleft = this.x;
+        var myright = this.x + (this.width);
+        var mytop = this.y;
+        var mybottom = this.y + (this.height);
+        var otherleft = otherObj.x;
+        var otherright = otherObj.x + (otherObj.width);
+        var othertop = otherObj.y;
+        var otherbottom = otherObj.y + (otherObj.height);
+        var crash = true;
+
+        if ((mybottom < othertop) ||
+        (mytop > otherbottom) ||
+        (myright < otherleft) ||
+        (myleft > otherright)) {
+            crash = false;
+        }
+        return crash;
     }
 }
 class Tile {
@@ -310,6 +354,8 @@ class MessageBox{
 }
 class Vitamina{
 
+   particles = [];
+
     constructor(x, y, color){
         this.x = x;
         this.y = y;
@@ -321,12 +367,12 @@ class Vitamina{
     draw(){
 
         // Draw particles
-        particles.forEach((particle, particleIndex) => {
+        this.particles.forEach((particle, particleIndex) => {
 
             if (particle.alpha <= 0) {
                 // after alpha hit < 0 the particle reappears on the screen. 
                 // let's make sure that does not happen
-                particles.splice(particleIndex, 1)
+                this.particles.splice(particleIndex, 1)
             } else {
                 // console.log("show particles on screeen")
                 // console.log(particle);
@@ -339,13 +385,24 @@ class Vitamina{
         // creating rectangle
         ctx.save();
         ctx.beginPath();
-        ctx.fillStyle = "blue";
+        ctx.fillStyle = "transparent"; //make it transparent
         ctx.fillRect(this.x, this.y, this.width, this.height);
         ctx.fill();
         ctx.restore();
  
-        drawApple(this.x, this.y);
+        //drawApple(this.x, this.y);
+        this.#drawImage(this.x, this.y)
 
+    }
+    splashIt(){
+
+        // console.log("Boom - Enemy Splased!!!")
+    
+        for (let index = 0; index < 8   ; index++) {
+            // particles.push(new Particle(target.x, target.y, 3, {x: Math.random()-0.5, y: Math.random()-0.5}, color))    
+            this.particles.push(new Particle(this.x, this.y, 3,   {x: (Math.random())*10-5, y: (Math.random())*10-5}, 'red'))    
+        }
+        // console.log(particles)
     }
     update(){
 
@@ -355,12 +412,25 @@ class Vitamina{
         this.x = Math.floor(Math.random() * canvas.width-40);
         this.y = Math.floor(Math.random() * canvas.height-40);
 
-    //ensure to discount the dashboard space 
-        if(this.y < 60 ) this.y = 80;
+        //ensure to discount the dashboard space 
+        if(this.y < 60  ||  this.y > canvas.height) this.y = 80;
+        if(this.x < 20  ||  this.x > canvas.width) this.x = 80;
+            
+    }
+    #drawImage(x, y){
+
+        // Image implementation (both work with not error by the image does not show)
+        const appleImg  = new Image();
+        appleImg.src = './assets/jabolko(red)-48.png';
+    
+        var img = document.getElementById("source");
+    
+        // console.log(x + ", " + y) 
+        //ctx.drawImage(appleImg, x, y);
+        ctx.drawImage(appleImg, 1, 1, 104, 124, x-14, y-7, 85, 85);
             
     }
 
-   
 }
 class Particle {
 
@@ -390,12 +460,83 @@ class Particle {
         this.alpha -=  0.10 ;
     }
 }
+class Stopwatch {
+    constructor(id, delay=100) { //Delay in ms ->
+      this.state = "paused";
+      this.delay = delay;
+      this.display = document.getElementById(id);
+      this.value = 0;
+    }
+    
+    formatTime(ms) {
+      var hours   = Math.floor(ms / 3600000);
+      var minutes = Math.floor((ms - (hours * 3600000)) / 60000);
+      var seconds = Math.floor((ms - (hours * 3600000) - (minutes * 60000)) / 1000);
+      var ds = Math.floor((ms - (hours * 3600000) - (minutes * 60000) - (seconds * 1000))/100);
+   
+      if (hours   < 10) {hours   = "0"+hours;}
+      if (minutes < 10) {minutes = "0"+minutes;}
+      if (seconds < 10) {seconds = "0"+seconds;}
+      return hours+':'+minutes+':'+seconds+'.'+ds;
+    }
+    
+    update() {
+      if (this.state=="running") {
+        this.value += this.delay;
+      }
+
+      return this.formatTime(this.value);
+    }
+    
+    start() {
+      if (this.state=="paused") {
+        this.state="running";
+        if (!this.interval) {
+          var t=this;
+          this.interval = setInterval(function(){t.update();}, this.delay);
+        }
+      }
+    }
+    
+    stop() {
+         if (this.state=="running") {
+        this.state="paused";
+      if (this.interval) {
+        clearInterval(this.interval);
+        this.interval = null;
+      }
+         }
+    }
+    
+    reset() {
+      this.stop();
+      this.value=0;
+      this.update();
+    }
+  }
+class SoundPlayer{
+
+    //Used to play sound when requested
+    #beepSound;                           //cuando creamos una variable con # es privado,el mundo afuera de puede utilizarla.
+    
+    constructor(id, source){
+
+        //Allow for playing sound
+        this.#beepSound = document.getElementById(id);
+        this.#beepSound.src = source;
+        console.log(this.#beepSound);
+    }
+    play(){
+        this.#beepSound.play();
+    }
+
+}
 function gameLoop(){
    // console.log("veces que pase por aqui");
     if (gamePaused==true) {
           //Finish the game
           cancelAnimationFrame(AnimationId)
-          oMessageBox    = new MessageBox(canvas.width/4, canvas.height/4, 300, 150, 'grey', 'white', '30px Courier', 'Game Paused!');
+          oMessageBox    = new MessageBox((canvas.width/2)-100, (canvas.height/2)-40, 200, 100, 'grey', 'white', '20px Courier', 'Game Paused!');
           oMessageBox.draw('Game Paused!');
           return;
         }
@@ -461,9 +602,7 @@ function draw(){
             // ctx.font = "20px Arial";
             // ctx.strokeText("Soy Arielle de Madet ", canvas.width/2, index);
 
-
         }
-    
     //}
     // gameOver = true;
 
@@ -482,31 +621,51 @@ function update(){
 
     oSnake.update();
     oScoreBox.update()
-    oTimeBox.update(getTime());
+    oTimeBox.update(stopWatch.update());
 
-    // console.log(oSnake.x + ' = ' + (canvas.width-20));
+
     // console.log(oSnake.y + ' = ' + (canvas.height-20));
     
-    // if player tries to move off the board prevent that (LE: No need for this game)
-    if(oSnake.y < dashboardHeight || oSnake.y > canvas.height-20){
+    // if player tries to move off the board Game
+    if(oSnake.y == dashboardHeight-20 || oSnake.y == canvas.height){
+        // oSnake.y = oSnake.previousY;
+        // oSnake.update();
+        // oSnake.draw();
+
+        oCrash.play();
         gameOver = true;
 
-    } else if(oSnake.x < 0 || oSnake.x > (canvas.width-20)){
+    } else if(oSnake.x < 0 || oSnake.x > canvas.width-20){
+       // oSnake.x = canvas.width-20;
+        oCrash.play();
         gameOver = true;
     }
     
     // console.log("f1: " + recCollisionDectetion(oSnake, oVitamin));
-    if(recCollisionDectetion(oSnake, oVitamin)) {
+    if(oSnake.crashWithOthers (oVitamin)) {
         // console.log("Collision detected");
         // if (!gamePaused) gameOver = true;
         // setGameOver();
 
         // circle explosion
-        splashIt(oVitamin, 'red');
+        oEat.play();
+        oVitamin.splashIt();
         oVitamin.move();
         addScore();
-        oScoreBox = new MessageBox(20, 10, 110, 40, 'orange', 'white', '20px Courier', 'Score: ' + score);
+        oScoreBox = new MessageBox(20, 10, 130, 40, 'orange', 'white', '20px Courier', 'Score:' + score);
         setTimeout(function(){ oSnake.grow(1);}, 1000);
+    }
+
+    // si la cabeza de la snake toca una de las partes de su cuerpo(empezando despues de 2), game over.
+
+    for ( let index = 2; index < oSnake.cuerpo.length; index++) {
+
+        var tile = oSnake.cuerpo[index];
+
+        if (oSnake.crashWithBody(tile)) {
+            oCrash.play();
+            gameOver = true;
+        }
     }
 }
 function MovePlayerPaddle(key){
@@ -515,6 +674,13 @@ function MovePlayerPaddle(key){
 
         // reset pause the game
         gamePaused = !gamePaused;
+
+        if(gamePaused) {
+            stopWatch.stop();
+        } else{
+            stopWatch.start();
+        }
+
         // console.log("gamePaused: " + gamePaused);
         gameLoop();
         return;
@@ -524,6 +690,7 @@ function MovePlayerPaddle(key){
         // game started
         running = true;
         gamePaused = false;
+        stopWatch.start();
         if (!steppedGame) requestAnimationFrame(laggedRequestAnimationFrame)
         oSnake.move = DIRECTION.RIGHT; 
     }
@@ -578,26 +745,12 @@ function getTime(){
     
                 return clock;
 }
-
-var fps = 8; 
+var fps = 10; 
 // Article reference: http://www.javascriptkit.com/javatutors/requestanimationframe.shtml
 function laggedRequestAnimationFrame(timestamp){
     setTimeout(function(){ //throttle requestAnimationFrame to 20fps
         AnimationId = requestAnimationFrame(gameLoop);
     }, 1000/fps)
-}
-function drawApple(x, y){
-
-    // Image implementation (both work with not error by the image does not show)
-    const appleImg  = new Image();
-    appleImg.src = './assets/jabolko(red)-48.png';
-
-    var img = document.getElementById("source");
-
-    // console.log(x + ", " + y) 
-    //ctx.drawImage(appleImg, x, y);
-    ctx.drawImage(appleImg, 1, 1, 104, 124, x-14, y-7, 80, 80);
-        
 }
 function recCollisionDectetion(targetA, targetB) {
     return !(targetB.x > (targetA.x + targetA.width) || 
@@ -645,20 +798,13 @@ function setGameOver(){
 
     // Finish the game
     cancelAnimationFrame(AnimationId)
+
+   // oGameOver.play();
         
     oMessageBox = new MessageBox((canvas.width/2)-100, (canvas.height/2)-40, 200, 80, 'grey', 'white', "20px Courier", "Game Over!!!");
     oMessageBox.draw("GameOver");
+   
     
-}
-function splashIt(target, color){
-
-    // console.log("Boom - Enemy Splased!!!")
-
-    for (let index = 0; index < 8   ; index++) {
-        // particles.push(new Particle(target.x, target.y, 3, {x: Math.random()-0.5, y: Math.random()-0.5}, color))    
-        particles.push(new Particle(target.x, target.y, 3,   {x: Math.floor(Math.random())*10-5, y: Math.floor(Math.random())*10-5}, color))    
-    }
-    // console.log(particles)
 }
 function addScore(){
     score += 5;

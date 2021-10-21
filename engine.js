@@ -1,14 +1,14 @@
 // Call for our function to execute when page is loaded
 document.addEventListener('DOMContentLoaded', SetupCanvas); //cuanda hay una interracion con la paginaWeb (juego),activa o llama la funcion setupCanvas
 
-let steppedGame = true; //para que el snake camina solo. Cuando steppedGame = true se hace manual
+let steppedGame = false; //para que el snake camina solo. Cuando steppedGame = true se hace manual
 
 let gameOver = false;
 let running = false;
 let gamePaused = false;
 
 let score = 0;
-let dashboardHeight = 40;
+let dashboardHeight = 60;
 
 let AnimationId;
 
@@ -20,10 +20,14 @@ let oScoreBox;
 let oVitamin;
 let oDashboard;
 let oGameTitle;
+let stopWatch;
 
+let oEat;
+let oCrash;
+let oGameOver;
 
-let today = new Date();
-let clock = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
+// let today = new Date();
+// let clock = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
  
 
 // Used to monitor whether paddles and ball are
@@ -48,8 +52,8 @@ function SetupCanvas(){
     // working with Canvas
     ctx = canvas.getContext('2d');
 
-    canvas.width = 820; //Math.floor(innerWidth * 0.50);
-    canvas.height = 680; //Math.floor(innerHeight * 0.70);
+    canvas.width = 880; //Math.floor(innerWidth * 0.50);
+    canvas.height = 580; //Math.floor(innerHeight * 0.70);
 
     document.addEventListener('keydown', MovePlayerPaddle);
  
@@ -60,14 +64,25 @@ function SetupCanvas(){
     oVitamin = new Vitamina(0, 0);
     oVitamin.move();
 
+    stopWatch = new Stopwatch("stopWatchDisplay");
+    stopWatch.reset();
+
     
-    oDashboard = new MessageBox(0, 0, canvas.width, 60, 'white', '', '', '');
-    oTimeBox   = new MessageBox(canvas.width-110, 10, 90, 40, 'orange', 'white','14px Courier', clock);
+    oDashboard = new MessageBox(0, 0, canvas.width, dashboardHeight, 'white', '', '', '');
+    oTimeBox   = new MessageBox(canvas.width-130, 10, 120, 40, 'orange', 'white','14px Courier', stopWatch.update());
     oScoreBox  = new MessageBox(20, 10, 130, 40, 'orange', 'white', '20px Courier', 'Score:' + score);
-    oGameTitle = new MessageBox(canvas.width*0.45, 10, 100, 40, 'white', 'orange', '22px Courier', 'Snake');
+    oGameTitle = new MessageBox(canvas.width*0.45, 10, 120, 40, 'white', 'green', 'bold 26px Courier', 'Snake');
+
 
     draw();
+
+    oEat = new SoundPlayer('beepSound1', "assets/beep.wav");
+    oCrash= new SoundPlayer('beepSound2', "assets/stop.flac");
+    oGameOver= new SoundPlayer('beepSound2', "assets/010609168_prev.mp3");
+    
+
    console.log('canvas.width: ' + canvas.width + ' canvas.height: ' + canvas.height);
+   console.log('DashBoard: ' + dashboardHeight );
 }
 class Snake {
 
@@ -214,7 +229,7 @@ class Snake {
         for (let index = 0; index < numberOfTiles; index++) {
             // console.log("tile: " + index); 
             this.length +=1;
-            this.cuerpo.push(new Tile(tilePosX, tilePosY, this.velocity, 'yellow', this.length, tilePosX-20, tilePosY))
+            this.cuerpo.push(new Tile(tilePosX, tilePosY, this.velocity, 'yellow', '@', tilePosX-20, tilePosY))
             tilePosX -= 20; // TODO: Check if whether of not the head should always grow to the right???
             //tilePosY -= tilePosY;    // Y does not change for the initial setup       
         }
@@ -445,12 +460,83 @@ class Particle {
         this.alpha -=  0.10 ;
     }
 }
+class Stopwatch {
+    constructor(id, delay=100) { //Delay in ms ->
+      this.state = "paused";
+      this.delay = delay;
+      this.display = document.getElementById(id);
+      this.value = 0;
+    }
+    
+    formatTime(ms) {
+      var hours   = Math.floor(ms / 3600000);
+      var minutes = Math.floor((ms - (hours * 3600000)) / 60000);
+      var seconds = Math.floor((ms - (hours * 3600000) - (minutes * 60000)) / 1000);
+      var ds = Math.floor((ms - (hours * 3600000) - (minutes * 60000) - (seconds * 1000))/100);
+   
+      if (hours   < 10) {hours   = "0"+hours;}
+      if (minutes < 10) {minutes = "0"+minutes;}
+      if (seconds < 10) {seconds = "0"+seconds;}
+      return hours+':'+minutes+':'+seconds+'.'+ds;
+    }
+    
+    update() {
+      if (this.state=="running") {
+        this.value += this.delay;
+      }
+
+      return this.formatTime(this.value);
+    }
+    
+    start() {
+      if (this.state=="paused") {
+        this.state="running";
+        if (!this.interval) {
+          var t=this;
+          this.interval = setInterval(function(){t.update();}, this.delay);
+        }
+      }
+    }
+    
+    stop() {
+         if (this.state=="running") {
+        this.state="paused";
+      if (this.interval) {
+        clearInterval(this.interval);
+        this.interval = null;
+      }
+         }
+    }
+    
+    reset() {
+      this.stop();
+      this.value=0;
+      this.update();
+    }
+  }
+class SoundPlayer{
+
+    //Used to play sound when requested
+    #beepSound;                           //cuando creamos una variable con # es privado,el mundo afuera de puede utilizarla.
+    
+    constructor(id, source){
+
+        //Allow for playing sound
+        this.#beepSound = document.getElementById(id);
+        this.#beepSound.src = source;
+        console.log(this.#beepSound);
+    }
+    play(){
+        this.#beepSound.play();
+    }
+
+}
 function gameLoop(){
    // console.log("veces que pase por aqui");
     if (gamePaused==true) {
           //Finish the game
           cancelAnimationFrame(AnimationId)
-          oMessageBox    = new MessageBox(canvas.width/4, canvas.height/4, 300, 150, 'grey', 'white', '30px Courier', 'Game Paused!');
+          oMessageBox    = new MessageBox((canvas.width/2)-100, (canvas.height/2)-40, 200, 100, 'grey', 'white', '20px Courier', 'Game Paused!');
           oMessageBox.draw('Game Paused!');
           return;
         }
@@ -516,9 +602,7 @@ function draw(){
             // ctx.font = "20px Arial";
             // ctx.strokeText("Soy Arielle de Madet ", canvas.width/2, index);
 
-
         }
-    
     //}
     // gameOver = true;
 
@@ -537,22 +621,23 @@ function update(){
 
     oSnake.update();
     oScoreBox.update()
-    oTimeBox.update(getTime());
+    oTimeBox.update(stopWatch.update());
 
-     //console.log(canvas.width + canvas.height);
+
     // console.log(oSnake.y + ' = ' + (canvas.height-20));
     
     // if player tries to move off the board Game
-    if(oSnake.y == dashboardHeight+20 || oSnake.y == canvas.height){
+    if(oSnake.y == dashboardHeight-20 || oSnake.y == canvas.height){
         // oSnake.y = oSnake.previousY;
         // oSnake.update();
         // oSnake.draw();
 
+        oCrash.play();
         gameOver = true;
 
     } else if(oSnake.x < 0 || oSnake.x > canvas.width-20){
-        //oSnake.x = canvas.width-20;
-
+       // oSnake.x = canvas.width-20;
+        oCrash.play();
         gameOver = true;
     }
     
@@ -563,6 +648,7 @@ function update(){
         // setGameOver();
 
         // circle explosion
+        oEat.play();
         oVitamin.splashIt();
         oVitamin.move();
         addScore();
@@ -577,6 +663,7 @@ function update(){
         var tile = oSnake.cuerpo[index];
 
         if (oSnake.crashWithBody(tile)) {
+            oCrash.play();
             gameOver = true;
         }
     }
@@ -587,6 +674,13 @@ function MovePlayerPaddle(key){
 
         // reset pause the game
         gamePaused = !gamePaused;
+
+        if(gamePaused) {
+            stopWatch.stop();
+        } else{
+            stopWatch.start();
+        }
+
         // console.log("gamePaused: " + gamePaused);
         gameLoop();
         return;
@@ -596,6 +690,7 @@ function MovePlayerPaddle(key){
         // game started
         running = true;
         gamePaused = false;
+        stopWatch.start();
         if (!steppedGame) requestAnimationFrame(laggedRequestAnimationFrame)
         oSnake.move = DIRECTION.RIGHT; 
     }
@@ -650,7 +745,7 @@ function getTime(){
     
                 return clock;
 }
-var fps = 8; 
+var fps = 10; 
 // Article reference: http://www.javascriptkit.com/javatutors/requestanimationframe.shtml
 function laggedRequestAnimationFrame(timestamp){
     setTimeout(function(){ //throttle requestAnimationFrame to 20fps
@@ -703,9 +798,12 @@ function setGameOver(){
 
     // Finish the game
     cancelAnimationFrame(AnimationId)
+
+   // oGameOver.play();
         
     oMessageBox = new MessageBox((canvas.width/2)-100, (canvas.height/2)-40, 200, 80, 'grey', 'white', "20px Courier", "Game Over!!!");
     oMessageBox.draw("GameOver");
+   
     
 }
 function addScore(){

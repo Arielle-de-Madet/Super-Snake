@@ -25,6 +25,9 @@ let stopWatch;
 let oEat;
 let oCrash;
 let oGameOver;
+let oGameSoundtrack;
+
+let lives = 3;
 
 // let today = new Date();
 // let clock = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
@@ -76,9 +79,11 @@ function SetupCanvas(){
 
     draw();
 
-    oEat = new SoundPlayer('beepSound1', "assets/beep.wav");
+    oEat = new SoundPlayer('beepSound1', "assets/crunch.6.ogg");
     oCrash= new SoundPlayer('beepSound2', "assets/stop.flac");
-    oGameOver= new SoundPlayer('beepSound2', "assets/010609168_prev.mp3");
+    oGameOver= new SoundPlayer('beepSound3', "assets/010609168_prev.mp3");
+    oGameSoundtrack = new SoundPlayer('beepSound4', "assets/forest.mp3"); 
+   
     
 
    console.log('canvas.width: ' + canvas.width + ' canvas.height: ' + canvas.height);
@@ -265,6 +270,11 @@ class Snake {
         }
         return crash;
     }
+    resetPosition(){
+        this.x = 300;
+        this.y = 150;
+    }
+
 }
 class Tile {
 
@@ -527,7 +537,7 @@ class SoundPlayer{
         console.log(this.#beepSound);
     }
     play(){
-        this.#beepSound.play();
+         this.#beepSound.play();
     }
 
 }
@@ -536,7 +546,7 @@ function gameLoop(){
     if (gamePaused==true) {
           //Finish the game
           cancelAnimationFrame(AnimationId)
-          oMessageBox    = new MessageBox((canvas.width/2)-100, (canvas.height/2)-40, 200, 100, 'grey', 'white', '20px Courier', 'Game Paused!');
+          oMessageBox    = new MessageBox((canvas.width/2)-100, (canvas.height/2)-40, 200, 100, 'black', 'red', '20px Courier', 'Game Paused!');
           oMessageBox.draw('Game Paused!');
           return;
         }
@@ -550,14 +560,23 @@ function gameLoop(){
         
 
     } else {
+
+        if(lives==0){
+            setGameOver();
+        } else {
+            resetBoard()
+        }
          
         setGameOver();
+        return;
 
         // //Finish the game
         // cancelAnimationFrame(AnimationId)
 
         // messageBox.draw();
     }
+    oGameSoundtrack.play();
+
 }
 function draw(){
     //for (let index = 0; index<canvas.width; index+=50) {
@@ -631,14 +650,16 @@ function update(){
         // oSnake.y = oSnake.previousY;
         // oSnake.update();
         // oSnake.draw();
-
+       
         oCrash.play();
         gameOver = true;
+        lives--;
 
     } else if(oSnake.x < 0 || oSnake.x > canvas.width-20){
        // oSnake.x = canvas.width-20;
         oCrash.play();
         gameOver = true;
+        lives--;
     }
     
     // console.log("f1: " + recCollisionDectetion(oSnake, oVitamin));
@@ -665,6 +686,7 @@ function update(){
         if (oSnake.crashWithBody(tile)) {
             oCrash.play();
             gameOver = true;
+            lives--;
         }
     }
 }
@@ -798,10 +820,10 @@ function setGameOver(){
 
     // Finish the game
     cancelAnimationFrame(AnimationId)
-
-   // oGameOver.play();
+    
+    oGameOver.play();
         
-    oMessageBox = new MessageBox((canvas.width/2)-100, (canvas.height/2)-40, 200, 80, 'grey', 'white', "20px Courier", "Game Over!!!");
+    oMessageBox = new MessageBox((canvas.width/2)-100, (canvas.height/2)-40, 200, 80, 'black', 'red', "20px Courier", "Game Over!!!");
     oMessageBox.draw("GameOver");
    
     
@@ -815,4 +837,13 @@ function generateRandomColor(){
     return randomColor;
     //random color will be freshly served
 }
+function resetBoard(){
+   // oSnake.resetPosition();
+    oVitamin.move();
+    gameOver = false;
+   // oSnake.draw();
+   // oVitamin.draw();
+   // draw();
+}
+
     

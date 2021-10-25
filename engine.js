@@ -1,8 +1,7 @@
 // Call for our function to execute when page is loaded
 document.addEventListener('DOMContentLoaded', SetupCanvas); //cuanda hay una interracion con la paginaWeb (juego),activa o llama la funcion setupCanvas
 
-let steppedGame = false; //para que el snake camina solo. Cuando steppedGame = true se hace manual
-
+let steppedGame = false;
 let gameOver = false;
 let running = false;
 let gamePaused = false;
@@ -12,8 +11,7 @@ let dashboardHeight = 60;
 
 let AnimationId;
 
-let oSnake; // cambien el nombre de laVEnenosa a oSnake (o para objeto)
-//let t1;
+let oSnake; 
 let oMessageBox;
 let oTimeBox;
 let oScoreBox;
@@ -21,19 +19,16 @@ let oVitamin;
 let oDashboard;
 let oGameTitle;
 let stopWatch;
-
 let oEat;
 let oCrash;
 let oGameOver;
+
 let oGameSoundtrack;
 
 let lives = 3;
 
-// let today = new Date();
-// let clock = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
- 
+//let today = new Date();
 
-// Used to monitor whether paddles and ball are
 // moving and in what direction
 let DIRECTION = {
     STOPPED: 0,
@@ -58,10 +53,10 @@ function SetupCanvas(){
     canvas.width = 880; //Math.floor(innerWidth * 0.50);
     canvas.height = 580; //Math.floor(innerHeight * 0.70);
 
-    document.addEventListener('keydown', MovePlayerPaddle);
+    document.addEventListener('keydown', ProcessUserCommands);
  
     
-    oSnake = new Snake(100, 400, 0, 'green');
+    oSnake = new Snake(440, 300, 0, 'green');
     oSnake.grow(1);
 
     oVitamin = new Vitamina(0, 0);
@@ -70,11 +65,11 @@ function SetupCanvas(){
     stopWatch = new Stopwatch("stopWatchDisplay");
     stopWatch.reset();
 
-    
+
     oDashboard = new MessageBox(0, 0, canvas.width, dashboardHeight, 'white', '', '', '');
     oTimeBox   = new MessageBox(canvas.width-130, 10, 120, 40, 'orange', 'white','14px Courier', stopWatch.update());
     oScoreBox  = new MessageBox(20, 10, 130, 40, 'orange', 'white', '20px Courier', 'Score:' + score);
-    oGameTitle = new MessageBox(canvas.width*0.45, 10, 120, 40, 'white', 'green', 'bold 26px Courier', 'Snake');
+    oGameTitle = new MessageBox(canvas.width*0.45, 10, 120, 40, 'black', 'yellow', 'bold 26px Courier', 'Snake');
 
 
     draw();
@@ -83,7 +78,6 @@ function SetupCanvas(){
     oCrash= new SoundPlayer('beepSound2', "assets/stop.flac");
     oGameOver= new SoundPlayer('beepSound3', "assets/010609168_prev.mp3");
     oGameSoundtrack = new SoundPlayer('beepSound4', "assets/forest.mp3"); 
-   
     
 
    console.log('canvas.width: ' + canvas.width + ' canvas.height: ' + canvas.height);
@@ -111,7 +105,7 @@ class Snake {
         this.velocity = 20;
         this.cuerpo = [];
 
-        this.length = 0;
+        this.bodySize = 0;
 
        // save head's positon for next tile
        let tilePosX = this.prevX;
@@ -137,13 +131,6 @@ class Snake {
         ctx.strokeStyle = 'green';
         ctx.stroke();
 
-        //innerHeight
-
-        // console.log("contruct.draw.1");
-        // console.log(this.snappedTiles)
-
-        // innerHeight
-
         // draw individual tiles into body
         for (let index = 0; index < this.cuerpo.length; index++) {
             const currentTile = this.cuerpo[index];
@@ -151,12 +138,10 @@ class Snake {
         }
         ctx.restore();
 
-        // console.log("contructdraw.2");
-        // console.log(this.snappedTiles)
+        this.#drawLives();   
+
     }
     update(){
-
-        // console.log("SetPreviousPos.enter");
 
         // save previous position
         this.prevX = this.x;
@@ -177,9 +162,7 @@ class Snake {
                 this.x -= this.velocity;
                 break;
         }
-        // console.log("update.updatePrevious.1");
-        // console.log(this.snappedTiles)
-        
+
         // console.log("Snake Postions -> x: " + this.x + " y: " + this.y);
         // console.log("Snake Prev Postions -> x: " + this.prevX + " y: " + this.prevY);
 
@@ -202,8 +185,6 @@ class Snake {
             tilePosY = currentTile.prevY;
 
         }
-        // console.log("update.updatePrevious.2");
-        // console.log(this.snappedTiles)
     }
     grow(numberOfTiles){
 
@@ -215,30 +196,24 @@ class Snake {
 
         if (this.cuerpo.length == 0){
             tilePosX = this.prevX;
-            tilePosY = this.prevY; 
-            // console.log("follow head at: " + tilePosX + ", " + tilePosY);   
+            tilePosY = this.prevY;   
         } else {
             // if not, follow tail
             let tile = this.cuerpo[this.cuerpo.length-1];
             if (tile != undefined){
                 tilePosX = tile.prevX;
-                tilePosY = tile.prevY;      
-                // console.log("follow tile at: " + tilePosX + ", " + tilePosY);   
+                tilePosY = tile.prevY;         
             }
         }
-
-        //console.log("grow h(x.y): " + this.x + ", " + this.y);
-        //console.log("grow Prev(Posx.Posy): " + tilePosX + ", " + tilePosY);
 
         // adding default tiles to initial body
         for (let index = 0; index < numberOfTiles; index++) {
             // console.log("tile: " + index); 
-            this.length +=1;
-            this.cuerpo.push(new Tile(tilePosX, tilePosY, this.velocity, 'yellow', '@', tilePosX-20, tilePosY))
+            this.bodySize +=1;
+            this.cuerpo.push(new Tile(tilePosX, tilePosY, this.velocity, 'yellow', this.bodySize, tilePosX-20, tilePosY))
             tilePosX -= 20; // TODO: Check if whether of not the head should always grow to the right???
             //tilePosY -= tilePosY;    // Y does not change for the initial setup       
         }
-
     }
     crashWithBody(tile){
     
@@ -250,7 +225,7 @@ class Snake {
     }
     crashWithOthers(otherObj){
 
-        console.log('s-x: '  + this.x , 's-y: ' + this.y)
+        //console.log('s-x: '  + this.x , 's-y: ' + this.y)
 
         var myleft = this.x;
         var myright = this.x + (this.width);
@@ -271,10 +246,21 @@ class Snake {
         return crash;
     }
     resetPosition(){
-        this.x = 300;
-        this.y = 150;
+        this.x = 400;
+        this.y = 400;
     }
+    #drawLives(x, y){
 
+        let posX = 500;
+ 
+        for (let index = 0; index < lives; index++) {
+            posX += 25;
+            const snakeImg  = new Image(); 
+            snakeImg.src = './assets/king_cobra-red.png';
+            ctx.drawImage(snakeImg, 1, 128, 64, 64, posX, 17, 25, 25);
+            
+        }    
+    }
 }
 class Tile {
 
@@ -429,15 +415,10 @@ class Vitamina{
     }
     #drawImage(x, y){
 
-        // Image implementation (both work with not error by the image does not show)
+     //   var img = document.getElementById("source");  // Image implementation (both work with not error by the image does not show)
         const appleImg  = new Image();
         appleImg.src = './assets/jabolko(red)-48.png';
-    
-        var img = document.getElementById("source");
-    
-        // console.log(x + ", " + y) 
-        //ctx.drawImage(appleImg, x, y);
-        ctx.drawImage(appleImg, 1, 1, 104, 124, x-14, y-7, 85, 85);
+        ctx.drawImage(appleImg, 1, 1, 100, 120, x-6, y-6, 70, 70);
             
     }
 
@@ -525,24 +506,21 @@ class Stopwatch {
     }
   }
 class SoundPlayer{
-
     //Used to play sound when requested
-    #beepSound;                           //cuando creamos una variable con # es privado,el mundo afuera de puede utilizarla.
+    #beepSound;                   
     
     constructor(id, source){
 
         //Allow for playing sound
         this.#beepSound = document.getElementById(id);
         this.#beepSound.src = source;
-        console.log(this.#beepSound);
+        //(this.#beepSound);
     }
     play(){
-         this.#beepSound.play();
+        this.#beepSound.play();
     }
-
 }
 function gameLoop(){
-   // console.log("veces que pase por aqui");
     if (gamePaused==true) {
           //Finish the game
           cancelAnimationFrame(AnimationId)
@@ -567,86 +545,33 @@ function gameLoop(){
             resetBoard()
         }
          
-        setGameOver();
-        return;
-
-        // //Finish the game
-        // cancelAnimationFrame(AnimationId)
-
-        // messageBox.draw();
     }
     oGameSoundtrack.play();
 
 }
 function draw(){
-    //for (let index = 0; index<canvas.width; index+=50) {
-        {
-            //Clear the canvas 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    {
+        //Clear the canvas 
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+        oDashboard.draw();
+        oTimeBox.draw();
+        oScoreBox.draw("Score: " + score);
+        oGameTitle.draw();
+        oSnake.draw();
+        oVitamin.draw();
 
-            oSnake.draw();
-            oDashboard.draw();
-            oTimeBox.draw();
-            oScoreBox.draw("Score: " + score);
-            oGameTitle.draw();
-            oVitamin.draw();
- 
-            // //Draw Canvas background
-            // ctx.fillStyle = 'rgb(0, 0, 0, 0.3)';
-            // ctx.fillRect(0, 0, canvas.width, canvas.height);
-            
-
-            // //creating circles
-            // ctx.beginPath();
-            // ctx.fillStyle = 'White';
-            // var speed = 0;
-            // speed += 0;
-
-            //     ctx.arc(cirX, cirY, 30, 0, 2 * Math.PI);
-            //     ctx.stroke();
-            //     ctx.fillStyle = "yellow";
-            //     ctx.fill();
-            //     console.log("x: " + index + "y: " + index);
-
-            // //creating rectangle
-            // ctx.beginPath();
-            // ctx.rect(canvas.width-index+speed, index+speed, 40, 40, 40);
-            // ctx.fillStyle = "red";
-            // ctx.fill();
-            // ctx.stroke();
-            
-            // //escribir en el canvas
-            // canvas = document.querySelector("canvas");
-            // ctx = canvas.getContext("2d");
-            // ctx.font = "20px Arial";
-            // ctx.strokeText("Soy Arielle de Madet ", canvas.width/2, index);
-
-        }
-    //}
-    // gameOver = true;
-
-    // console.log(gameOver);
-    // if (gameOver) {
-    //     console.log("gameOver: " + gameOver);    
-    //     cancelAnimationFrame(AnimationId);
-    //     clearInterval(refreshInterValId);
-
-    // }
-
+    }
 }
 function update(){
-
-    // console.log("update.enter")
 
     oSnake.update();
     oScoreBox.update()
     oTimeBox.update(stopWatch.update());
-
-
-    // console.log(oSnake.y + ' = ' + (canvas.height-20));
     
     // if player tries to move off the board Game
-    if(oSnake.y == dashboardHeight-20 || oSnake.y == canvas.height){
+    console.log("Snake Postions -> x: " + oSnake.x + " y: " + oSnake.y);
+    if(oSnake.y <= dashboardHeight-20 || oSnake.y == canvas.height){
         // oSnake.y = oSnake.previousY;
         // oSnake.update();
         // oSnake.draw();
@@ -661,12 +586,7 @@ function update(){
         gameOver = true;
         lives--;
     }
-    
-    // console.log("f1: " + recCollisionDectetion(oSnake, oVitamin));
     if(oSnake.crashWithOthers (oVitamin)) {
-        // console.log("Collision detected");
-        // if (!gamePaused) gameOver = true;
-        // setGameOver();
 
         // circle explosion
         oEat.play();
@@ -690,7 +610,7 @@ function update(){
         }
     }
 }
-function MovePlayerPaddle(key){
+function ProcessUserCommands(key){
 
     if ((key.keyCode === 32)  && (running == true)){
 
@@ -701,9 +621,8 @@ function MovePlayerPaddle(key){
             stopWatch.stop();
         } else{
             stopWatch.start();
+            lives=0;
         }
-
-        // console.log("gamePaused: " + gamePaused);
         gameLoop();
         return;
 
@@ -723,11 +642,6 @@ function MovePlayerPaddle(key){
         case (key.keyCode === 27):      
             if (!gamePaused) gameOver = true;
             break;
-
-        // Handle space bar for PAUSE
-        // case (key.keyCode === 32):
-        //     running = true;
-        //     break;
 
         // Handle up arrow and w input
         case (key.keyCode === 38 || key.keyCode === 87) && oSnake.move != DIRECTION.DOWN: 
@@ -756,7 +670,6 @@ function MovePlayerPaddle(key){
         default:
             break;
     }
-    // console.log("key.code: " + key.keyCode)
     if(steppedGame) gameLoop();
 }
 function getTime(){
@@ -820,12 +733,10 @@ function setGameOver(){
 
     // Finish the game
     cancelAnimationFrame(AnimationId)
-    
     oGameOver.play();
         
     oMessageBox = new MessageBox((canvas.width/2)-100, (canvas.height/2)-40, 200, 80, 'black', 'red', "20px Courier", "Game Over!!!");
     oMessageBox.draw("GameOver");
-   
     
 }
 function addScore(){
@@ -838,12 +749,15 @@ function generateRandomColor(){
     //random color will be freshly served
 }
 function resetBoard(){
-   // oSnake.resetPosition();
-    oVitamin.move();
-    gameOver = false;
-   // oSnake.draw();
-   // oVitamin.draw();
-   // draw();
-}
 
+    let bodySize = oSnake.bodySize;
     
+    oSnake.resetPosition();
+    //oSnake.grow(bodySize);
+    oVitamin.move();
+   
+    gameOver = false;
+    gamePaused = false;
+    
+    gameLoop();
+}

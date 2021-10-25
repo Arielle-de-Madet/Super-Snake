@@ -1,0 +1,5 @@
+Chercher un effet pour la phrase be careful.. avec feu etc..(effet)
+Chercher son pour le jeu
+Chercher son pour gameOver
+Chercher effet pour le message box
+creer un autre tag dans le html si je veux un autre son

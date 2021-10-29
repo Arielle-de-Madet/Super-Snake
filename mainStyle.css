@@ -11,3 +11,25 @@ canvas {
     /* margin-left: 30px;
        margin-top: 30px; */
 }
+.father {
+    position: relative;
+
+}
+.child {
+    border: 8px outset lightskyblue;
+    background-color: lightblue(173, 230, 182);    
+    text-align: center;
+    height: 80px;
+    width: 50%;
+    position: relative;
+    position: absolute;;
+    top: 25%;
+    left: 25%;
+}
+/* .myDiv {
+    border: 8px outset lightskyblue;
+    background-color: lightblue;
+    text-align: center;
+    height: 80px;
+    width: 100%;
+} */

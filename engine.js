@@ -51,13 +51,15 @@ function SetupCanvas(){
     ctx = canvas.getContext('2d');
 
     canvas.width = 880; //Math.floor(innerWidth * 0.50);
-    canvas.height = 580; //Math.floor(innerHeight * 0.70);
+    canvas.height = 500; //Math.floor(innerHeight * 0.70);
 
     document.addEventListener('keydown', ProcessUserCommands);
  
     
     oSnake = new Snake(440, 300, 0, 'green');
     oSnake.grow(1);
+
+    console.log('SetupCanvas');
 
     oVitamin = new Vitamina(0, 0);
     oVitamin.move();
@@ -80,8 +82,8 @@ function SetupCanvas(){
     oGameSoundtrack = new SoundPlayer('beepSound4', "assets/forest.mp3"); 
     
 
-   console.log('canvas.width: ' + canvas.width + ' canvas.height: ' + canvas.height);
-   console.log('DashBoard: ' + dashboardHeight );
+   // console.log('canvas.width: ' + canvas.width + ' canvas.height: ' + canvas.height);
+   // console.log('DashBoard: ' + dashboardHeight );
 }
 class Snake {
 
@@ -111,9 +113,6 @@ class Snake {
        let tilePosX = this.prevX;
        let tilePosY = this.prevY;
 
-
-        // console.log("Snake.constructor.1");
-        // console.log(this.snappedTiles)
     }
     draw(){
 
@@ -210,7 +209,7 @@ class Snake {
         for (let index = 0; index < numberOfTiles; index++) {
             // console.log("tile: " + index); 
             this.bodySize +=1;
-            this.cuerpo.push(new Tile(tilePosX, tilePosY, this.velocity, 'yellow', this.bodySize, tilePosX-20, tilePosY))
+            this.cuerpo.push(new Tile(tilePosX, tilePosY, this.velocity, 'yellow', "@", tilePosX-20, tilePosY))
             tilePosX -= 20; // TODO: Check if whether of not the head should always grow to the right???
             //tilePosY -= tilePosY;    // Y does not change for the initial setup       
         }
@@ -220,6 +219,7 @@ class Snake {
         let crash = false;
 
         if ((this.x == tile.x) && (this.y == tile.y)) crash = true;
+       // console.log("crashWithBody: " + crash);
         return crash;
 
     }
@@ -248,6 +248,7 @@ class Snake {
     resetPosition(){
         this.x = 400;
         this.y = 400;
+        this.move = DIRECTION.STOPPED;
     }
     #drawLives(x, y){
 
@@ -338,7 +339,8 @@ class MessageBox{
 
         ctx.font = this.font;
         ctx.fillStyle = this.foreColor;
-        ctx.fillText(this.message, this.x + (this.wWidth*0.19), this.y + (this.wHeight*0.65)); //hacer una equacion para que el text box sea en coordinacion con el tamano del canvas
+        ctx.textAlign = "center";
+        ctx.fillText(this.message, this.x + (this.wWidth/2), this.y + (this.wHeight*0.65)); //hacer una equacion para que el text box sea en coordinacion con el tamano del canvas
         ctx.restore();
     }
     update(newMessage){
@@ -418,7 +420,7 @@ class Vitamina{
      //   var img = document.getElementById("source");  // Image implementation (both work with not error by the image does not show)
         const appleImg  = new Image();
         appleImg.src = './assets/jabolko(red)-48.png';
-        ctx.drawImage(appleImg, 1, 1, 100, 120, x-6, y-6, 70, 70);
+        ctx.drawImage(appleImg, 1, 1, 100, 120, x-6, y-6, 60, 60);
             
     }
 
@@ -519,8 +521,13 @@ class SoundPlayer{
     play(){
         this.#beepSound.play();
     }
+    mute(){
+        this.#beepSound.muted = !this.#beepSound.muted;
+    }
+
 }
 function gameLoop(){
+    console.log("gameLoop")
     if (gamePaused==true) {
           //Finish the game
           cancelAnimationFrame(AnimationId)
@@ -532,17 +539,16 @@ function gameLoop(){
     if(!gameOver && !gamePaused) {
 
         if(!steppedGame) requestAnimationFrame(laggedRequestAnimationFrame)
-
         update();
-        draw();
-        
+        draw();  
 
     } else {
 
-        if(lives==0){
+        if(lives<0){
             setGameOver();
         } else {
-            resetBoard()
+           // console.log("gamePaused: " + gamePaused + ",gameOver: " + gameOver + ",steppedGame: " + steppedGame)
+            resetBoard();
         }
          
     }
@@ -570,20 +576,18 @@ function update(){
     oTimeBox.update(stopWatch.update());
     
     // if player tries to move off the board Game
-    console.log("Snake Postions -> x: " + oSnake.x + " y: " + oSnake.y);
+    // console.log("Snake Postions -> x: " + oSnake.x + " y: " + oSnake.y);
     if(oSnake.y <= dashboardHeight-20 || oSnake.y == canvas.height){
-        // oSnake.y = oSnake.previousY;
-        // oSnake.update();
-        // oSnake.draw();
-       
         oCrash.play();
         gameOver = true;
+        stopWatch.stop();
         lives--;
-
-    } else if(oSnake.x < 0 || oSnake.x > canvas.width-20){
+    } 
+    if(oSnake.x < 0 || oSnake.x > canvas.width-20){
        // oSnake.x = canvas.width-20;
         oCrash.play();
         gameOver = true;
+        stopWatch.stop();
         lives--;
     }
     if(oSnake.crashWithOthers (oVitamin)) {
@@ -602,11 +606,12 @@ function update(){
     for ( let index = 2; index < oSnake.cuerpo.length; index++) {
 
         var tile = oSnake.cuerpo[index];
-
-        if (oSnake.crashWithBody(tile)) {
-            oCrash.play();
-            gameOver = true;
-            lives--;
+        if (oSnake.move != DIRECTION.STOPPED) {
+            if (oSnake.crashWithBody(tile)) {
+                oCrash.play();
+                gameOver = true;
+                lives--;
+            }
         }
     }
 }
@@ -619,9 +624,9 @@ function ProcessUserCommands(key){
 
         if(gamePaused) {
             stopWatch.stop();
-        } else{
+        } else {
             stopWatch.start();
-            lives=0;
+           // lives=0;
         }
         gameLoop();
         return;
@@ -680,7 +685,7 @@ function getTime(){
     
                 return clock;
 }
-var fps = 10; 
+var fps = 15; 
 // Article reference: http://www.javascriptkit.com/javatutors/requestanimationframe.shtml
 function laggedRequestAnimationFrame(timestamp){
     setTimeout(function(){ //throttle requestAnimationFrame to 20fps
@@ -751,13 +756,38 @@ function generateRandomColor(){
 function resetBoard(){
 
     let bodySize = oSnake.bodySize;
-    
-    oSnake.resetPosition();
-    //oSnake.grow(bodySize);
+    //oSnake2 = new Snake (300, 140, "yellow");
+    //oSnake2.grow(1); 
+    //console.log('resetBoard');  
     oVitamin.move();
+  
+    oSnake.resetPosition();
+    // console.log("crashWithBody");
+    // console.log(oSnake2);
    
     gameOver = false;
     gamePaused = false;
-    
+
+    while (oSnake.crashWithBody(oVitamin)){
+        oVitamin.move();
+    }
+
+    // crashWithBody = false;
+    stopWatch.reset();    
     gameLoop();
+}
+function muteIt(){
+
+    let btn = document.getElementById('sound')
+
+    if (btn.innerText === 'On'){
+        btn.innerText = 'Off';
+    } else {
+        btn.innerText = 'On';
+    }
+
+    oGameSoundtrack.mute();
+    oGameOver.mute();
+    oEat.mute();
+    oCrash.mute();
 }

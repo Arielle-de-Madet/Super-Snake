@@ -651,24 +651,28 @@ function ProcessUserCommands(key){
         // Handle up arrow and w input
         case (key.keyCode === 38 || key.keyCode === 87) && oSnake.move != DIRECTION.DOWN: 
             oSnake.move = DIRECTION.UP;
+            stopWatch.start();
             //update();
             break;
 
         // Handle down arrow and s input
         case (key.keyCode === 40 || key.keyCode === 83) && oSnake.move != DIRECTION.UP:
             oSnake.move = DIRECTION.DOWN;
+            stopWatch.start();
             //update();
             break;
         
         // Handle left arrow and a input
         case (key.keyCode === 37 || key.keyCode === 65) && oSnake.move != DIRECTION.RIGHT:
             oSnake.move = DIRECTION.LEFT;
+            stopWatch.start();
             //update();
             break;
 
         // Handle right arrow and d input
         case (key.keyCode === 39 || key.keyCode === 68)  && oSnake.move != DIRECTION.LEFT:
             oSnake.move = DIRECTION.RIGHT;
+            stopWatch.start();
             //update();
             break;
 
@@ -772,8 +776,7 @@ function resetBoard(){
         oVitamin.move();
     }
 
-    // crashWithBody = false;
-    stopWatch.reset();    
+    // crashWithBody = false; 
     gameLoop();
 }
 function muteIt(){

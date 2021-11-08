@@ -16,4 +16,4 @@ However, beware ... although easy, this game has its rules. You have a total of 
 This game can only be played on a computer. Use the keys: up, down, right and left to give direction to the snake. 
 The keys (W, A, S, D) can also be used. W to go up, S to go down, A for left and D for right.
 
-![this is an image of the game](assets/Image 2021-11-06 at 18.09.06.jpeg)
+![this is an image of the game](assets\Image 2021-11-06 at 18.09.06.jpeg)
